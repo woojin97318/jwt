@@ -1,52 +1,48 @@
 package com.cos.jwt.config;
 
-import com.cos.jwt.filter.MyFilter1;
-import com.cos.jwt.filter.MyFilter3;
-import com.cos.jwt.jwt.JwtAuthenticationFilter;
-import lombok.RequiredArgsConstructor;
+import com.cos.jwt.repository.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
-import org.springframework.web.filter.CorsFilter;
 
 @Configuration
 @EnableWebSecurity // Spring Security Filter가 스프링 필터체인에 등록이 된다.
-@RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final CorsFilter corsFilter;
+    private final CorsConfig corsConfig;
+
+    private final UserRepository userRepository;
+
+    public SecurityConfig(CorsConfig corsConfig,
+                          UserRepository userRepository) {
+        this.corsConfig = corsConfig;
+        this.userRepository = userRepository;
+    }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity.addFilterBefore(new MyFilter3(), BasicAuthenticationFilter.class);
-
-        httpSecurity
+    SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
+        return httpSecurity
                 // token을 사용하는 방식이기 때문에 csrf disable
                 .csrf().disable()
 
-                // 서버는 session재 메모리 영역이 존핸다.
-                // 세션을 사용할 때
-                // 사용자가 로그인을 진행하면 서버는 session id를 response준다.
-                // session id를 받은 클라이언트는 보통 cookie에 해당 값을 저장한다.
-                // 이 후 새로운 resquest가 발생하면 쿠키에 있는 session id를 서버에 같이 보낸다.
-                // 해당 방식은 서버가 여러대일 경우 좋지않다.
-                // 서버별로 세션 영역이 나뉘어져 있기 때문이다.
-
-                // 쿠키는 동일 도메인에서만 사용이 가능하다. (동일 출처 정책)
-                // 또한 클라이언트가 javascript를 사용하여
-
-                // 세션을 사용하지 않기 때문에 STATELESS로 설정
+                /**
+                 * 서버는 session 메모리 영역이 존핸다.
+                 * 로그인 진행 > 서버는 session id를 response한다.
+                 * session id를 받은 클라이언트는 보통 cookie에 해당 값을 저장한다.
+                 * 이 후 새로운 resquest가 발생하면 쿠키에 있는 session id를 서버에 같이 보낸다.
+                 * 서버별로 세션 영역이 나뉘어져 있기 때문에 해당 방식은 서버가 여러대일 경우 좋지 않다.
+                 * 세션을 사용하지 않기 때문에 STATELESS로 설정
+                 */
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 
                 .and()
 
-                // @CorssOrigin(인증X), 시큐리티 필터에 등록 인증 O
-                .addFilter(corsFilter)
                 .formLogin().disable()
                 /** Header에 Authorization을 담고 통신하는 방법 2가지
                  * 1. Basic 방식
@@ -60,10 +56,10 @@ public class SecurityConfig {
                  * 하지만 토큰의 유효시간이 있기 때문에 안전하다. 위 방법보다는 안전하다고 한다.
                  */
                 .httpBasic().disable()
+                // 커스텀 필터 등록
+                .apply(new MyCustomDsl())
 
-                // AuthenticationManager를 줘야한다.
-                // 로그인을 진행하는 로직이기 때문에
-                .addFilter(new JwtAuthenticationFilter())
+                .and()
 
                 .authorizeRequests()
                 .antMatchers("/api/v1/user/**")
@@ -72,8 +68,18 @@ public class SecurityConfig {
                 .access("hasRole('ROLE_MANAGER') or hasRole('ROLE_ADMIN')")
                 .antMatchers("/api/v1/admin/**")
                 .access("hasRole('ROLE_ADMIN')")
-                .anyRequest().permitAll();
+                .anyRequest().permitAll()
+                .and().build();
+    }
 
-        return httpSecurity.build();
+    public class MyCustomDsl extends AbstractHttpConfigurer<MyCustomDsl, HttpSecurity> {
+
+        @Override
+        public void configure(HttpSecurity httpSecurity) throws Exception {
+            AuthenticationManager authenticationManager = httpSecurity.getSharedObject(AuthenticationManager.class);
+
+            httpSecurity
+                    .addFilter(corsConfig.corsFilter());
+        }
     }
 }

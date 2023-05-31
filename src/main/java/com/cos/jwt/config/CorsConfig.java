@@ -11,7 +11,6 @@ public class CorsConfig {
 
     @Bean
     public CorsFilter corsFilter() {
-        System.out.println("==================== cosFilter start ====================");
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true); // 내 서버가 응답을 할 때 json을 js에서 처리할 수 있게 할지를 설정
