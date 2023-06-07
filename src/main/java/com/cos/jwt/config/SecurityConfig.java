@@ -1,5 +1,7 @@
 package com.cos.jwt.config;
 
+import com.cos.jwt.jwt.JwtAuthenticationFilter;
+import com.cos.jwt.jwt.JwtAuthorzationFilter;
 import com.cos.jwt.repository.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,8 +20,7 @@ public class SecurityConfig {
 
     private final UserRepository userRepository;
 
-    public SecurityConfig(CorsConfig corsConfig,
-                          UserRepository userRepository) {
+    public SecurityConfig(CorsConfig corsConfig, UserRepository userRepository) {
         this.corsConfig = corsConfig;
         this.userRepository = userRepository;
     }
@@ -79,7 +80,9 @@ public class SecurityConfig {
             AuthenticationManager authenticationManager = httpSecurity.getSharedObject(AuthenticationManager.class);
 
             httpSecurity
-                    .addFilter(corsConfig.corsFilter());
+                    .addFilter(corsConfig.corsFilter())
+                    .addFilter(new JwtAuthenticationFilter(authenticationManager))
+                    .addFilter(new JwtAuthorzationFilter(authenticationManager, userRepository));
         }
     }
 }
