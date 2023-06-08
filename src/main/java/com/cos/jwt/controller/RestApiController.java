@@ -25,6 +25,18 @@ public class RestApiController {
     }
 
     /**
+     * 회원가입
+     */
+    @PostMapping("/join")
+    public String join(@RequestBody User user) {
+        user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
+        user.setRoles("ROLE_USER");
+        userRepository.save(user);
+
+        return "회원가입 완료";
+    }
+
+    /**
      * JWT를 사용하면 UserDetailsService를 호출하지 않기 때문에
      * @AuthenticationPrincipal 사용이 불가능.
      * 왜냐하면 @AuthenticationPrincipal은 UserDetailsService에서 리턴될 때 만들어지기 때문
@@ -55,13 +67,5 @@ public class RestApiController {
     @GetMapping("admin/users")
     public List<User> users() {
         return userRepository.findAll();
-    }
-
-    @PostMapping("/join")
-    public String join(@RequestBody User user) {
-        user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
-        user.setRoles("ROLE_USER");
-        userRepository.save(user);
-        return "회원가입 완료";
     }
 }

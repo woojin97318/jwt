@@ -16,6 +16,7 @@ import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Date;
 
@@ -56,10 +57,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
         // 유저네임 패스워드 토큰 생성
         UsernamePasswordAuthenticationToken authenticationToken =
-                new UsernamePasswordAuthenticationToken(
-                        loginDto.getUsername(),
-                        loginDto.getPassword()
-                );
+                new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword());
 
         // authenticate() 함수가 호출 되면 인증 프로바이더가 유저 디테일 서비스의
         // loadUserByUsername(토큰의 첫번째 파라메터) 를 호출하고
@@ -67,7 +65,8 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         // UserDetails(DB값)의 getPassword()함수로 비교해서 동일하면
         // Authentication 객체를 만들어서 필터체인으로 리턴해준다.
 
-        // Tip: 인증 프로바이더의 디폴트 서비스는 UserDetailsService 타입
+        // PrincipalDetailsService의 loadUserByUsername() 실행됨
+        // 인증 프로바이더의 디폴트 서비스는 UserDetailsService 타입
         // Tip: 인증 프로바이더의 디폴트 암호화 방식은 BCryptPasswordEncoder
         // 결론은 인증 프로바이더에게 알려줄 필요가 없음.
         Authentication authentication = authenticationManager.authenticate(authenticationToken);
@@ -76,10 +75,12 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     }
 
     /**
+     * attemptAuthentication() 실행 후 인증이 정상적으로 되었으면 해당 함수가 실행됨
      * JWT Token 생성해서 response에 담아주기
      */
     @Override
-    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult)
+    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response,
+                                            FilterChain chain, Authentication authResult)
             throws IOException, ServletException {
         PrincipalDetails principalDetailis = (PrincipalDetails) authResult.getPrincipal();
 

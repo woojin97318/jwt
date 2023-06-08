@@ -8,7 +8,7 @@ public final class JwtConstants {
 
     public static final String SECRET = "전우진";
 
-    public static final int EXPIRATION_TIME = 864000000;
+    public static final int EXPIRATION_TIME = 24 * 60 * 60 * 1000;
 
     public static final String TOKEN_PREFIX = "Bearer ";
 

@@ -25,7 +25,7 @@ public class User {
     private String password;
 
     @Column(name = "roles", nullable = false)
-    private String roles; // USER,ADMIN
+    private String roles; // USER, ADMIN
 
     public List<String> getRoleList() {
         if (this.roles.length() > 0) {

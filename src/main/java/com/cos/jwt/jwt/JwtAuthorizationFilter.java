@@ -17,12 +17,17 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-public class JwtAuthorzationFilter extends BasicAuthenticationFilter {
+/**
+ * security가 filter을 가지고 있는데 그 필터 중에 BasicAuthenticationFilter이 있음
+ * 권한이나 특정 주소를 요청했을 때 위 필터를 무조건 타게 되어있다.
+ * 만약 권한 or 인증이 필요한 주소가 아니라면 해당 필터를 안탄다.
+ */
+public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
 
     private UserRepository userRepository;
 
-    public JwtAuthorzationFilter(AuthenticationManager authenticationManager,
-                                 UserRepository userRepository) {
+    public JwtAuthorizationFilter(AuthenticationManager authenticationManager,
+                                  UserRepository userRepository) {
         super(authenticationManager);
         this.userRepository = userRepository;
     }
@@ -41,7 +46,7 @@ public class JwtAuthorzationFilter extends BasicAuthenticationFilter {
                 .replace(JwtConstants.TOKEN_PREFIX, "");
 
         // 토큰 검증 (이게 인증이기 때문에 AuthenticationManager도 필요 없음)
-        // 내가 SecurityContext에 집적접근해서 세션을 만들때 자동으로 UserDetailsService에 있는
+        // 내가 SecurityContext에 직적 접근해서 세션을 만들때 자동으로 UserDetailsService에 있는
         // loadByUsername이 호출됨.
         String username = JWT
                 .require(Algorithm.HMAC512(JwtConstants.SECRET))
